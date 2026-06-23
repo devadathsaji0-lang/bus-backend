@@ -12,13 +12,13 @@ mongoose.connect(process.env.MONGO_URI || process.env.MONGO_URL)
   .then(() => console.log('✅ MongoDB connect ആയി bro'))
   .catch(err => console.log('❌ Error:', err));
 
-// Bus Schema
+// Bus Schema - type-ക്ക് default value ഇട്ടു
 const busSchema = new mongoose.Schema({
   busNumber: String,
   from: String,
   to: String,
   route: String,
-  type: String,
+  type: { type: String, default: 'Private Bus' }, // 🔥 Default value
   time: String,
   fare: Number,
   totalSeats: { type: Number, default: 40 },
@@ -27,41 +27,35 @@ const busSchema = new mongoose.Schema({
 
 const Bus = mongoose.model('Bus', busSchema);
 
-// Test route
 app.get('/', (req, res) => {
   res.send('Bus Card Backend Running ✅ CRUD Ready + Spot Price Logic');
 });
 
-// Helper function - Spot fare calculate ചെയ്യാൻ
 const addSpotFare = (bus) => {
   const busObj = bus.toObject();
-  busObj.spotFare = (busObj.fare || 0) + 10;  // ₹10 extra for spot booking
+  busObj.spotFare = (busObj.fare || 0) + 10;
   return busObj;
 };
 
-// 1. R = READ - All buses
 app.get('/api/buses', async (req, res) => {
   try {
     const buses = await Bus.find();
-    // Spot fare add ചെയ്ത് അയക്കുന്നു
     res.json(buses.map(addSpotFare));
   } catch (err) {
     res.status(500).json({error: 'Error വന്നു bro: ' + err.message});
   }
 });
 
-// 1.5. R = READ SINGLE BUS - Modal-ന് വേണ്ടി ✅
 app.get('/api/buses/:id', async (req, res) => {
   try {
     const bus = await Bus.findById(req.params.id);
     if(!bus) return res.status(404).json({error: 'Bus കിട്ടിയില്ല bro'});
-    res.json(addSpotFare(bus));  // Spot fare കൂടി അയക്കുന്നു
+    res.json(addSpotFare(bus));
   } catch (err) {
     res.status(500).json({error: 'Error: ' + err.message});
   }
 });
 
-// 2. C = CREATE - Add new bus
 app.post('/api/buses', async (req, res) => {
   try {
     const bus = new Bus(req.body);
@@ -72,7 +66,6 @@ app.post('/api/buses', async (req, res) => {
   }
 });
 
-// 3. U = UPDATE - Seat book
 app.put('/api/book/:id', async (req, res) => {
   try {
     const bus = await Bus.findById(req.params.id);
@@ -94,7 +87,6 @@ app.put('/api/book/:id', async (req, res) => {
   }
 });
 
-// 4. D = DELETE - Delete bus
 app.delete('/api/buses/:id', async (req, res) => {
   try {
     await Bus.findByIdAndDelete(req.params.id);
