@@ -29,25 +29,33 @@ const Bus = mongoose.model('Bus', busSchema);
 
 // Test route
 app.get('/', (req, res) => {
-  res.send('Bus Card Backend Running ✅ CRUD Ready');
+  res.send('Bus Card Backend Running ✅ CRUD Ready + Spot Price Logic');
 });
+
+// Helper function - Spot fare calculate ചെയ്യാൻ
+const addSpotFare = (bus) => {
+  const busObj = bus.toObject();
+  busObj.spotFare = (busObj.fare || 0) + 10;  // ₹10 extra for spot booking
+  return busObj;
+};
 
 // 1. R = READ - All buses
 app.get('/api/buses', async (req, res) => {
   try {
     const buses = await Bus.find();
-    res.json(buses);
+    // Spot fare add ചെയ്ത് അയക്കുന്നു
+    res.json(buses.map(addSpotFare));
   } catch (err) {
     res.status(500).json({error: 'Error വന്നു bro: ' + err.message});
   }
 });
 
-// 1.5. R = READ SINGLE BUS - Modal-ന് വേണ്ടി പുതിയത് ✅
+// 1.5. R = READ SINGLE BUS - Modal-ന് വേണ്ടി ✅
 app.get('/api/buses/:id', async (req, res) => {
   try {
     const bus = await Bus.findById(req.params.id);
     if(!bus) return res.status(404).json({error: 'Bus കിട്ടിയില്ല bro'});
-    res.json(bus);
+    res.json(addSpotFare(bus));  // Spot fare കൂടി അയക്കുന്നു
   } catch (err) {
     res.status(500).json({error: 'Error: ' + err.message});
   }
@@ -58,7 +66,7 @@ app.post('/api/buses', async (req, res) => {
   try {
     const bus = new Bus(req.body);
     await bus.save();
-    res.status(201).json({ msg: "Bus add ആയി ✅", bus });
+    res.status(201).json({ msg: "Bus add ആയി ✅", bus: addSpotFare(bus) });
   } catch (err) {
     res.status(400).json({error: 'Error: ' + err.message});
   }
@@ -79,7 +87,7 @@ app.put('/api/book/:id', async (req, res) => {
     res.json({ 
       msg: "Seat booked ✅", 
       available: bus.totalSeats - bus.bookedSeats,
-      bus 
+      bus: addSpotFare(bus)
     });
   } catch (err) {
     res.status(400).json({error: err.message});
