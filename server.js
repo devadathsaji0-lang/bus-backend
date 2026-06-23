@@ -32,7 +32,7 @@ app.get('/', (req, res) => {
   res.send('Bus Card Backend Running ✅ CRUD Ready');
 });
 
-// 1. R = READ - /api/buses PLURAL
+// 1. R = READ - All buses
 app.get('/api/buses', async (req, res) => {
   try {
     const buses = await Bus.find();
@@ -42,7 +42,18 @@ app.get('/api/buses', async (req, res) => {
   }
 });
 
-// 2. C = CREATE - /api/buses PLURAL
+// 1.5. R = READ SINGLE BUS - Modal-ന് വേണ്ടി പുതിയത് ✅
+app.get('/api/buses/:id', async (req, res) => {
+  try {
+    const bus = await Bus.findById(req.params.id);
+    if(!bus) return res.status(404).json({error: 'Bus കിട്ടിയില്ല bro'});
+    res.json(bus);
+  } catch (err) {
+    res.status(500).json({error: 'Error: ' + err.message});
+  }
+});
+
+// 2. C = CREATE - Add new bus
 app.post('/api/buses', async (req, res) => {
   try {
     const bus = new Bus(req.body);
@@ -75,7 +86,7 @@ app.put('/api/book/:id', async (req, res) => {
   }
 });
 
-// 4. D = DELETE - /api/buses PLURAL
+// 4. D = DELETE - Delete bus
 app.delete('/api/buses/:id', async (req, res) => {
   try {
     await Bus.findByIdAndDelete(req.params.id);
